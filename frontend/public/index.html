@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>System Monitor - Frontend</title>
+    <style>
+      body { font-family: Arial, Helvetica, sans-serif; margin: 20px; }
+      .card { border: 1px solid #ddd; padding: 12px; border-radius: 6px; margin-bottom: 12px; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(240px,1fr)); gap: 12px; }
+      pre { background:#f8f8f8; padding:8px; border-radius:4px }
+    </style>
+  </head>
+  <body>
+    <h1>System Monitor</h1>
+    <p>Simple local frontend that fetches metrics from <code>/api/metrics</code>.</p>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Latest</h3>
+        <div id="latest">Loading...</div>
+      </div>
+      <div class="card">
+        <h3>History (most recent)</h3>
+        <div id="history">Loading...</div>
+      </div>
+    </div>
+
+    <script>
+      const API_BASE = 'http://localhost:4000/api';
+
+      async function fetchLatest() {
+        try {
+          const res = await fetch(API_BASE + '/metrics/latest');
+          const data = await res.json();
+          const el = document.getElementById('latest');
+          if (!data || Object.keys(data).length === 0) {
+            el.innerText = 'No metrics yet.';
+            return;
+          }
+          const ts = new Date(data.timestamp).toLocaleString();
+          el.innerHTML = `
+            <div><strong>Time:</strong> ${ts}</div>
+            <div><strong>CPU %:</strong> ${data.cpu_percent.toFixed(2)}</div>
+            <div><strong>Memory:</strong> ${Math.round(data.mem_used / 1024 / 1024)} MB / ${Math.round(data.mem_total / 1024 / 1024)} MB</div>
+            <div><strong>Disk:</strong> ${Math.round(data.disk_used / 1024 / 1024)} MB / ${Math.round(data.disk_total / 1024 / 1024)} MB</div>
+          `;
+        } catch (err) {
+          document.getElementById('latest').innerText = 'Error fetching latest: ' + err.message;
+        }
+      }
+
+      async function fetchHistory() {
+        try {
+          const res = await fetch(API_BASE + '/metrics/history?limit=20');
+          const rows = await res.json();
+          const el = document.getElementById('history');
+          if (!rows || rows.length === 0) {
+            el.innerText = 'No history yet.';
+            return;
+          }
+          const list = rows.map(r => {
+            const ts = new Date(r.timestamp).toLocaleTimeString();
+            return `<div>${ts} — CPU ${r.cpu_percent.toFixed(1)}% — Mem ${Math.round(r.mem_used/1024/1024)}MB</div>`;
+          }).join('\n');
+          el.innerHTML = '<pre>' + list + '</pre>';
+        } catch (err) {
+          document.getElementById('history').innerText = 'Error fetching history: ' + err.message;
+        }
+      }
+
+      async function refresh() {
+        await fetchLatest();
+        await fetchHistory();
+      }
+
+      // initial
+      refresh();
+      // refresh every 10 seconds
+      setInterval(refresh, 10_000);
+    </script>
+  </body>
+</html>
