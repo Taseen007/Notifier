@@ -1,0 +1,32 @@
+# Node modules
+node_modules/
+
+# Environment files
+.env
+.env.*
+
+# PM2 and runtime logs
+.pm2/
+*.log
+logs/
+C:\Users\tasee\.pm2\logs\
+
+# Notifier state & queues (persistent local files)
+.notify_state.json
+.notify_queue.json
+
+# Editor/project files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+build/
